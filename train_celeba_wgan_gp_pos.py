@@ -11,7 +11,7 @@ import models_64x64_pos as models
 
 
 """ param """
-epoch = 500
+epoch = 5000
 batch_size = 64
 lr = 0.0002
 z_dim = 100
@@ -41,9 +41,9 @@ def preprocess_tik(img):
     return batch
 
 img_paths = glob.glob('../Generative_Art_with_GAN/datasets/img_align_celeba/*.jpg')
-data_pool = utils.DiskImageData(img_paths, batch_size, shape=[218, 178, 3], preprocess_fn=preprocess_fn)
+#data_pool = utils.DiskImageData(img_paths, batch_size, shape=[218, 178, 3], preprocess_fn=preprocess_fn)
 
-tik = np.load("/home/riku/tiktok/tiktok_align_crop_all_resize64.npy")
+tik = np.load("/home/aca10649fo/Fake-Up-Girls-/tiktok_align_crop_all_resize64.npy")
 
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
@@ -112,7 +112,7 @@ dir_name = "tik_for_load"
 summary_writer = tf.summary.FileWriter('./summaries/celeba_wgan_gp' + dir_name, sess.graph)
 
 ''' initialization '''
-load_dir = './checkpoints/celeba_wgan_gp/celeba_for_load'
+load_dir = './checkpoints/celeba_wgan_gp/tik_for_load'
 ckpt_dir = './checkpoints/celeba_wgan_gp/' + dir_name
 utils.mkdir(ckpt_dir + '/')
 if not utils.load_checkpoint(load_dir, sess):
@@ -123,7 +123,7 @@ try:
     z_ipt_sample = np.random.normal(size=[100, z_dim])
     
 
-    batch_epoch = len(data_pool) // (batch_size * n_critic)
+    batch_epoch = 40000 // (batch_size * n_critic)
     max_it = epoch * batch_epoch
     for it in range(sess.run(it_cnt), max_it):
         sess.run(update_cnt)
