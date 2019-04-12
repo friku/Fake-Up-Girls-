@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import ops
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+import numpy as np
 
 from functools import partial
 
@@ -148,3 +149,100 @@ def discriminator_wgan_gp256(img, dim=64, reuse=True, training=True):
         y = conv_ln_lrelu(y, dim * 32, 5, 2)
         logit = fc(y, 1)
         return logit
+##################################################################################
+# Residual-block, Self-Attention-block
+##################################################################################
+def batch_n(x, is_training=True, scope='batch_norm'):
+    return tf.layers.batch_normalization(x,
+                                         momentum=0.9,
+                                         epsilon=1e-05,
+                                         training=is_training,
+                                         name=scope)
+
+def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = batch_n(x_init)
+            x = relu(x)
+            x = conv(x, channels, 3,2)
+
+        with tf.variable_scope('res2') :
+            x = batch_n(x)
+            x = relu(x)
+            x = conv(x, channels, 3,1)
+
+        with tf.variable_scope('skip') :
+            x_init = conv(x_init, channels, 3,2)
+
+    return x + x_init
+
+def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = batch_n(x_init)
+            x = relu(x)
+            x = dconv(x, channels, 3, 2)
+
+        with tf.variable_scope('res2') :
+            x = batch_n(x)
+            x = relu(x)
+            x = dconv(x, channels, 3, 1)
+
+        with tf.variable_scope('skip') :
+            x_init = dconv(x_init, channels, 3, 2)
+
+
+    return x + x_init
+
+def hw_flatten(x) :
+    return tf.reshape(x,[-1,x.shape[1]*x.shape[2], x.shape[-1]])
+
+def self_attention_2(x, channels, scope='self_attention'):
+    with tf.variable_scope(scope):
+        f = conv(x, channels // 8, 1, 1, scope='f_conv')  # [bs, h, w, c']
+        f = tf.layers.max_pooling2d(f, pool_size=2, strides=2, padding='SAME')
+
+        g = conv(x, channels // 8, 1, 1, scope='g_conv')  # [bs, h, w, c']
+
+        h = conv(x, channels // 2, 1, 1, scope='h_conv')  # [bs, h, w, c]
+        h = tf.layers.max_pooling2d(h, pool_size=2, strides=2, padding='SAME')
+
+        # N = h * w
+        s = tf.matmul(hw_flatten(g), hw_flatten(f), transpose_b=True)  # # [bs, N, N]
+
+        beta = tf.nn.softmax(s)  # attention map
+
+        o = tf.matmul(beta, hw_flatten(h))  # [bs, N, C]
+        gamma = tf.get_variable("gamma", [1], initializer=tf.constant_initializer(0.0))
+
+        o = tf.reshape(o, shape=[-1, x.shape[1], x.shape[2], channels // 2])  # [bs, h, w, C]
+        o = conv(o, channels, 1, 1, scope='attn_conv')
+        x = gamma * o + x
+    return x
+
+#GAN_model
+
+def generator_big(z, dim=96, reuse=True, training=True):
+    with tf.variable_scope('generator', reuse=reuse):
+        bn = partial(batch_norm, is_training=training)
+        fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+        y = fc_bn_relu(z, 4 * 4 * dim * 8)
+        y = tf.reshape(y, [-1, 4, 4, dim * 8])
+        y = resblock_up(y, dim * 4, scope='resblock_up_1')
+        y = resblock_up(y, dim * 2, scope='resblock_up_2')
+        y = resblock_up(y, dim * 1, scope='resblock_up_3')
+        y = self_attention_2(y, dim * 1, scope='self_attention')
+        y = resblock_up(y, 3, scope='resblock_up_4')
+        img = tf.tanh(y)
+        return img
+
+def discriminator_wgan_gp_big(img, dim=96, reuse=True, training=True):
+    with tf.variable_scope('discriminator', reuse=reuse):     
+        y = resblock_down(img, dim * 1, scope='resblock_down_1')
+        y = self_attention_2(y, dim * 1, scope='self_attention')
+        y = resblock_down(y, dim * 2, scope='resblock_down_2')
+        y = resblock_down(y, dim * 4, scope='resblock_down_3')
+        y = resblock_down(y, dim * 8, scope='resblock_down_4')
+        logit = fc(y, 1)
+        return logit
+
