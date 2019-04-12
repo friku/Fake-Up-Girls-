@@ -37,6 +37,37 @@ def generator(z, dim=64, reuse=True, training=True):
         y = dconv_bn_relu(y, dim * 1, 5, 2)
         img = tf.tanh(dconv(y, 3, 5, 2))
         return img
+
+def generator128(z, dim=64, reuse=True, training=True):
+    with tf.variable_scope('generator', reuse=reuse):
+        bn = partial(batch_norm, is_training=training)
+        dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+        fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+
+        y = fc_bn_relu(z, 4 * 4 * dim * 16)
+        y = tf.reshape(y, [-1, 4, 4, dim * 16])
+        y = dconv_bn_relu(y, dim * 8, 5, 2)
+        y = dconv_bn_relu(y, dim * 4, 5, 2)
+        y = dconv_bn_relu(y, dim * 2, 5, 2)
+        y = dconv_bn_relu(y, dim * 1, 5, 2)
+        img = tf.tanh(dconv(y, 3, 5, 2))
+        return img
+
+def generator256(z, dim=64, reuse=True, training=True):
+    with tf.variable_scope('generator', reuse=reuse):
+        bn = partial(batch_norm, is_training=training)
+        dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+        fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+
+        y = fc_bn_relu(z, 4 * 4 * dim * 32)
+        y = tf.reshape(y, [-1, 4, 4, dim * 32])
+        y = dconv_bn_relu(y, dim * 16, 5, 2)
+        y = dconv_bn_relu(y, dim * 8, 5, 2)
+        y = dconv_bn_relu(y, dim * 4, 5, 2)
+        y = dconv_bn_relu(y, dim * 2, 5, 2)
+        y = dconv_bn_relu(y, dim * 1, 5, 2)
+        img = tf.tanh(dconv(y, 3, 5, 2))
+        return img
     
 
 def generator_ch(z,ch_input,ch_mask, dim=64, reuse=True, training=True):
@@ -94,3 +125,26 @@ def discriminator_wgan_gp_add(img, dim=64, reuse=True, training=True):
         feature = y
         logit = fc(y, 1)
         return logit,feature
+
+def discriminator_wgan_gp128(img, dim=64, reuse=True, training=True):
+    with tf.variable_scope('discriminator', reuse=reuse):
+        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
+        y = lrelu(conv(img, dim, 5, 2))
+        y = conv_ln_lrelu(y, dim * 2, 5, 2)
+        y = conv_ln_lrelu(y, dim * 4, 5, 2)
+        y = conv_ln_lrelu(y, dim * 8, 5, 2)
+        y = conv_ln_lrelu(y, dim * 16, 5, 2)
+        logit = fc(y, 1)
+        return logit
+
+def discriminator_wgan_gp256(img, dim=64, reuse=True, training=True):
+    with tf.variable_scope('discriminator', reuse=reuse):
+        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
+        y = lrelu(conv(img, dim, 5, 2))
+        y = conv_ln_lrelu(y, dim * 2, 5, 2)
+        y = conv_ln_lrelu(y, dim * 4, 5, 2)
+        y = conv_ln_lrelu(y, dim * 8, 5, 2)
+        y = conv_ln_lrelu(y, dim * 16, 5, 2)
+        y = conv_ln_lrelu(y, dim * 32, 5, 2)
+        logit = fc(y, 1)
+        return logit

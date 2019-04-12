@@ -17,6 +17,7 @@ lr = 0.0002
 z_dim = 100
 n_critic = 5
 gpu_id = 3
+imgsize = 128
 
 ''' data '''
 # you should prepare your own data in ./data/img_align_celeba
@@ -25,7 +26,7 @@ gpu_id = 3
 
 def preprocess_fn(img):
     crop_size = 154
-    re_size = 64
+    re_size = imgsize
     img = tf.image.crop_to_bounding_box(img, (218 - crop_size) // 2, (178 - crop_size) // 2, crop_size, crop_size)
 #    crop_size = 108
 #    re_size = 64
@@ -48,12 +49,12 @@ tik = np.load("/home/aca10649fo/Fake-Up-Girls-/tiktok_align_crop_all_resize64.np
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
-    generator = models.generator
-    discriminator = models.discriminator_wgan_gp
+    generator = models.generator128
+    discriminator = models.discriminator_wgan_gp128
 
     ''' graph '''
     # inputs
-    real = tf.placeholder(tf.float32, shape=[None, 64, 64, 3])
+    real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
     z = tf.placeholder(tf.float32, shape=[None, z_dim])
     
     
@@ -108,7 +109,7 @@ it_cnt, update_cnt = utils.counter()
 # saver
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
-dir_name = "tik_for_load"
+dir_name = "tik_"+str(imgsize)+"_for_load"
 summary_writer = tf.summary.FileWriter('./summaries/celeba_wgan_gp' + dir_name, sess.graph)
 
 ''' initialization '''
