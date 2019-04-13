@@ -11,11 +11,13 @@ import models_64x64_pos as models
 
 
 """ param """
-epoch = 5000
-batch_size = 64
-lr = 0.0002
+epoch = 50
+batch_i = 1
+batch_size = 64*batch_i
+lr_d = 0.0002
+lr_g = 0.00005
 z_dim = 100
-n_critic = 5
+n_critic = 2
 gpu_id = 3
 imgsize = 64
 
@@ -49,8 +51,8 @@ tik = np.load("./tiktok_align_crop_all_resize64.npy")
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
-    generator = models.generator_big
-    discriminator = models.discriminator_wgan_gp_big
+    generator = models.generator_self
+    discriminator = models.discriminator_wgan_gp_self
 
     ''' graph '''
     # inputs
@@ -89,8 +91,8 @@ with tf.device('/gpu:%d' % gpu_id):
     # otpims
     d_var = utils.trainable_variables('discriminator')
     g_var = utils.trainable_variables('generator')
-    d_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(d_loss, var_list=d_var)
-    g_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(g_loss, var_list=g_var)
+    d_step = tf.train.AdamOptimizer(learning_rate=lr_d, beta1=0.5).minimize(d_loss, var_list=d_var)
+    g_step = tf.train.AdamOptimizer(learning_rate=lr_g, beta1=0.5).minimize(g_loss, var_list=g_var)
 
     # summaries
     d_summary = utils.summary({wd: 'wd', gp: 'gp'})
@@ -109,11 +111,11 @@ it_cnt, update_cnt = utils.counter()
 # saver
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
-dir_name = "tik_"+str(imgsize)+"_big_for_load"
+dir_name = "tik_"+str(imgsize)+"_self_batch64_lrd2^-4_lrg5^-5_ch96"
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
 ''' initialization '''
-load_dir = './checkpoints/tik_big_for_load'
+load_dir = './checkpoints/tik_self_batch64_lrd2^-4_lrg5^-5_for_load'
 ckpt_dir = './checkpoints/' + dir_name
 utils.mkdir(ckpt_dir + '/')
 if not utils.load_checkpoint(load_dir, sess):
