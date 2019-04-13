@@ -9,7 +9,6 @@ import numpy as np
 import tensorflow as tf
 import models_64x64_pos as models
 
-
 """ param """
 epoch = 5000
 batch_i = 1
@@ -25,7 +24,6 @@ imgsize = 64
 # you should prepare your own data in ./data/img_align_celeba
 # celeba original size is [218, 178, 3]
 
-
 def preprocess_fn(img):
     crop_size = 154
     re_size = imgsize
@@ -36,7 +34,6 @@ def preprocess_fn(img):
     
     img = tf.to_float(tf.image.resize_images(img, [re_size, re_size], method=tf.image.ResizeMethod.BICUBIC)) / 127.5 - 1
     return img
-
 def preprocess_tik(img):
     sample_id = np.random.randint(0,img.shape[0],batch_size)
     batch = img[sample_id]
@@ -47,26 +44,21 @@ img_paths = glob.glob('../Generative_Art_with_GAN/datasets/img_align_celeba/*.jp
 #data_pool = utils.DiskImageData(img_paths, batch_size, shape=[218, 178, 3], preprocess_fn=preprocess_fn)
 
 tik = np.load("./tiktok_align_crop_all_resize64.npy")
-
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
     generator = models.generator_big
     discriminator = models.discriminator_wgan_gp_big
-
     ''' graph '''
     # inputs
     real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
     z = tf.placeholder(tf.float32, shape=[None, z_dim])
     
-    
     # generate
     fake = generator(z, reuse=False)
-
     # dicriminate
     r_logit = discriminator(real, reuse=False)
     f_logit = discriminator(fake)
-
     # losses
     def gradient_penalty(real, fake, f):
         def interpolate(a, b):
@@ -75,32 +67,26 @@ with tf.device('/gpu:%d' % gpu_id):
             inter = a + alpha * (b - a)
             inter.set_shape(a.get_shape().as_list())
             return inter
-
         x = interpolate(real, fake)
         pred = f(x)
         gradients = tf.gradients(pred, x)[0]
         slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=list(range(1, x.shape.ndims))))
         gp = tf.reduce_mean((slopes - 1.)**2)
         return gp
-
     wd = tf.reduce_mean(r_logit) - tf.reduce_mean(f_logit)
     gp = gradient_penalty(real, fake, discriminator)
     d_loss = -wd + gp * 10.0
     g_loss = -tf.reduce_mean(f_logit)
-
     # otpims
     d_var = utils.trainable_variables('discriminator')
     g_var = utils.trainable_variables('generator')
     d_step = tf.train.AdamOptimizer(learning_rate=lr_d, beta1=0.5).minimize(d_loss, var_list=d_var)
     g_step = tf.train.AdamOptimizer(learning_rate=lr_g, beta1=0.5).minimize(g_loss, var_list=g_var)
-
     # summaries
     d_summary = utils.summary({wd: 'wd', gp: 'gp'})
     g_summary = utils.summary({g_loss: 'g_loss'})
-
     # sample
     f_sample = generator(z, training=False)
-
 
 """ train """
 ''' init '''
@@ -111,7 +97,6 @@ it_cnt, update_cnt = utils.counter()
 # saver
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
-
 dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg2^-4_ch64"
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
@@ -122,7 +107,6 @@ ckpt_dir = './checkpoints/' + dir_name
 utils.mkdir(ckpt_dir + '/')
 if not utils.load_checkpoint(load_dir, sess):
     sess.run(tf.global_variables_initializer())
-
 ''' train '''
 try:
     z_ipt_sample = np.random.normal(size=[100, z_dim])
