@@ -15,7 +15,7 @@ epoch = 5000
 batch_i = 1
 batch_size = 64*batch_i
 lr_d = 0.0002
-lr_g = 0.00005
+lr_g = 0.0002
 z_dim = 100
 n_critic = 2
 gpu_id = 3
@@ -111,12 +111,8 @@ it_cnt, update_cnt = utils.counter()
 # saver
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
-<<<<<<< HEAD
-dir_name = "tik_"+str(imgsize)+"_self_batch64_lrd2^-4_lrg5^-5_ch64_kernel1"
-=======
 
-dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg5^-5_ch64"
->>>>>>> 6cc78d10d5f99c28c59e9d56a8f25436303650ad
+dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg2^-4_ch64"
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
 ''' initialization '''
