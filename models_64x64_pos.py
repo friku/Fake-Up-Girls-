@@ -159,23 +159,6 @@ def batch_n(x, is_training=True, scope='batch_norm'):
                                          training=is_training,
                                          name=scope)
 
-def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
-    with tf.variable_scope(scope):
-        with tf.variable_scope('res1'):
-            x = batch_n(x_init)
-            x = lrelu(x)
-            x = conv(x, channels, 3,2)
-
-        with tf.variable_scope('res2') :
-            x = batch_n(x)
-            x = lrelu(x)
-            x = conv(x, channels, 3,1)
-
-        with tf.variable_scope('skip') :
-            x_init = conv(x_init, channels, 3,2)
-
-    return x + x_init
-
 def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
@@ -190,6 +173,23 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 
         with tf.variable_scope('skip') :
             x_init = dconv(x_init, channels, 3, 2)
+
+    return x + x_init
+
+def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = batch_n(x_init)
+            x = lrelu(x)
+            x = conv(x, channels, 3,2)
+
+        with tf.variable_scope('res2') :
+            x = batch_n(x)
+            x = lrelu(x)
+            x = conv(x, channels, 3,1)
+
+        with tf.variable_scope('skip') :
+            x_init = conv(x_init, channels, 3,2)
 
     return x + x_init
 
