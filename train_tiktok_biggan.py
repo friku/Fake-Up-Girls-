@@ -11,7 +11,7 @@ import models_64x64_pos as models
 
 
 """ param """
-epoch = 50
+epoch = 5000
 batch_i = 1
 batch_size = 64*batch_i
 lr_d = 0.0002
@@ -51,8 +51,8 @@ tik = np.load("./tiktok_align_crop_all_resize64.npy")
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
-    generator = models.generator_self
-    discriminator = models.discriminator_wgan_gp_self
+    generator = models.generator_big
+    discriminator = models.discriminator_wgan_gp_big
 
     ''' graph '''
     # inputs
@@ -111,11 +111,17 @@ it_cnt, update_cnt = utils.counter()
 # saver
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
+<<<<<<< HEAD
 dir_name = "tik_"+str(imgsize)+"_self_batch64_lrd2^-4_lrg5^-5_ch64_kernel1"
+=======
+
+dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg5^-5_ch64"
+>>>>>>> 6cc78d10d5f99c28c59e9d56a8f25436303650ad
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
 ''' initialization '''
-load_dir = './checkpoints/tik_self_batch64_lrd2^-4_lrg5^-5_for_load'
+# load_dir = './checkpoints/tik_64_big_batch64_lrd2^-4_lrg5^-5_ch64'
+load_dir = './checkpoints/' + dir_name
 ckpt_dir = './checkpoints/' + dir_name
 utils.mkdir(ckpt_dir + '/')
 if not utils.load_checkpoint(load_dir, sess):
