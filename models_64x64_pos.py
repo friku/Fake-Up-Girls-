@@ -274,6 +274,5 @@ def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        y = global_sum_pooling(y)
-	logit = fc(y, 1)
+        logit = fc(y, 1)
         return logit
