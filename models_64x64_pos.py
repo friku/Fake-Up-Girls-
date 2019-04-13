@@ -219,6 +219,11 @@ def self_attention_2(x, channels, scope='self_attention'):
         x = gamma * o + x
     return x
 
+def global_sum_pooling(x) :
+    gsp = tf.reduce_sum(x, axis=[1, 2])
+    return gsp
+
+
 #GAN_model
 
 def generator_big(z, dim=96, reuse=True, training=True):
@@ -269,5 +274,6 @@ def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        logit = fc(y, 1)
+        y = global_sum_pooling(y)
+	logit = fc(y, 1)
         return logit
