@@ -266,7 +266,7 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
-        y = resblock(y, dim * 8, scope='resblock_down_4')
+        y = resblock(y, dim * 8, scope='resblock1')
         y = relu(y)
         logit = fc(y, 1)
         return logit
