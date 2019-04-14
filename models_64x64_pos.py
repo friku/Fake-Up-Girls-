@@ -178,11 +178,12 @@ def resblock(x_init, channels, use_bias=True, is_training=True, scope='resblock'
 
 def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
     with tf.variable_scope(scope):
-        with tf.variable_scope('res1'):
+        with tf.variable_scope('1x1conv1'):
             x = batch_n(x_init)
             x = relu(x)
             # x = tf.image.resize_nearest_neighbor(x, (2*x.shape[1],2*x.shape[2]))
             x = conv(x, channels, 1, 1)
+        with tf.variable_scope('res1'):
             x = batch_n(x)
             x = relu(x)
             x = conv(x, channels, 3, 2)
@@ -191,6 +192,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = batch_n(x)
             x = relu(x)
             x = conv(x, channels, 3, 1)
+        with tf.variable_scope('1x1conv2'):
             x = batch_n(x)
             x = relu(x)
             x = conv(x, channels, 1, 1)
@@ -203,10 +205,11 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
-        with tf.variable_scope('res1'):
+        with tf.variable_scope('1x1conv1'):
             x = ln(x_init)
             x = relu(x)
             x = conv(x, channels, 1,1)
+        with tf.variable_scope('res1') :
             x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3,1)
@@ -215,6 +218,7 @@ def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resb
             x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3,2)
+        with tf.variable_scope('1x1conv2'):
             x = ln(x)
             x = relu(x)
             x = conv(x, channels, 1,1)
