@@ -181,10 +181,12 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
-            x = relu(x_init)
+            x = ln(x_init)
+            x = relu(x)
             x = conv(x, channels, 3,1)
 
         with tf.variable_scope('res2') :
+            x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3,1)
             x = tf.layers.average_pooling2d(x,2,2)
