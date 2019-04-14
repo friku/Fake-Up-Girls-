@@ -185,7 +185,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
         with tf.variable_scope('res1'):
             x = batch_n(x)
             x = relu(x)
-            x = tf.image.resize_bicubic(x, (2*x.shape[1],2*x.shape[2]))
+            x = tf.image.resize_bilinear(x, (2*x.shape[1],2*x.shape[2]))
             x = conv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
@@ -198,7 +198,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = conv(x, channels, 1, 1)
 
         with tf.variable_scope('skip') :
-            x_init = tf.image.resize_bicubic(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
+            x_init = tf.image.resize_bilinear(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
             x_init = conv(x_init, channels, 1, 1)
 
     return x + x_init
