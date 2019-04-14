@@ -186,7 +186,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
         with tf.variable_scope('res1'):
             x = batch_n(x)
             x = relu(x)
-            x = conv(x, channels, 3, 2)
+            x = dconv(x, channels, 3, 2)
 
         with tf.variable_scope('res2') :
             x = batch_n(x)
