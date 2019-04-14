@@ -274,7 +274,7 @@ def generator_big(z, dim=64, reuse=True, training=True):
         y = self_attention_2(y, dim * 2, scope='self_attention1')
         y = resblock_up(y, dim * 1, scope='resblock_up_3')
         y = self_attention_2(y, dim * 1, scope='self_attention2')
-        y = resblock_up(y, 3, scope='resblock_up_3')
+        y = resblock_up(y, 3, scope='resblock_up_4')
         img = tf.tanh(y)
         return img
 
