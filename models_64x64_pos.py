@@ -236,7 +236,7 @@ def generator_big(z, dim=64, reuse=True, training=True):
         y = resblock_up(y, dim * 8, scope='resblock_up_0')
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
-        y = self_attention_2(y, dim * 1, scope='self_attention')
+        y = self_attention_2(y, dim * 2, scope='self_attention')
         y = resblock_up(y, dim * 1, scope='resblock_up_3')
         y = conv(relu(bn(y)),3,3,1)
         img = tf.tanh(y)
