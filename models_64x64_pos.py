@@ -179,12 +179,10 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
-            x = ln(x_init)
-            x = lrelu(x)
+            x = lrelu(x_init)
             x = conv(x, channels, 3,2)
 
         with tf.variable_scope('res2') :
-            x = ln(x)
             x = lrelu(x)
             x = conv(x, channels, 3,1)
 
