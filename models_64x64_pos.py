@@ -179,12 +179,12 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
-            x = batch_n(x_init)
+            x = ln(x_init)
             x = lrelu(x)
             x = conv(x, channels, 3,2)
 
         with tf.variable_scope('res2') :
-            x = batch_n(x)
+            x = ln(x)
             x = lrelu(x)
             x = conv(x, channels, 3,1)
 
@@ -192,6 +192,8 @@ def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resb
             x_init = conv(x_init, channels, 3,2)
 
     return x + x_init
+
+
 
 def hw_flatten(x) :
     return tf.reshape(x,[-1,x.shape[1]*x.shape[2], x.shape[-1]])
