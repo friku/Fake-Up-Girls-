@@ -11,7 +11,7 @@ import models_64x64_pos as models
 
 
 """ param """
-epoch = 5000
+epoch = 50
 batch_i = 1
 batch_size = 64*batch_i
 lr_d = 0.0002
@@ -115,8 +115,7 @@ dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg5^-5_ch64"
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
 ''' initialization '''
-# load_dir = './checkpoints/tik_64_big_batch64_lrd2^-4_lrg5^-5_ch64'
-load_dir = './checkpoints/' + dir_name
+load_dir = './checkpoints/tik_self_batch64_lrd2^-4_lrg5^-5_for_load'
 ckpt_dir = './checkpoints/' + dir_name
 utils.mkdir(ckpt_dir + '/')
 if not utils.load_checkpoint(load_dir, sess):

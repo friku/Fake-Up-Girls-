@@ -219,7 +219,6 @@ def self_attention_2(x, channels, scope='self_attention'):
         x = gamma * o + x
     return x
 
-
 #GAN_model
 
 def generator_big(z, dim=64, reuse=True, training=True):
@@ -239,7 +238,7 @@ def generator_big(z, dim=64, reuse=True, training=True):
 def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):     
         y = resblock_down(img, dim * 1, scope='resblock_down_1')
-        y = self_attention_2(y, dim * 1, scope='self_attention')
+        y = self_attention_2(y, dim * 1, scope='self_attention1')
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
