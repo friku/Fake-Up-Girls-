@@ -181,12 +181,10 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
-            x = ln(x_init)
-            x = relu(x)
+            x = relu(x_init)
             x = conv(x, channels, 3,1)
 
         with tf.variable_scope('res2') :
-            x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3,1)
             x = tf.layers.average_pooling2d(x,2,2)
@@ -237,11 +235,12 @@ def generator_big(z, dim=64, reuse=True, training=True):
         fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
         y = fc_bn_relu(z, 4 * 4 * dim * 8)
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
+        y = resblock_up(y, dim * 8, scope='resblock_up_0')
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
-        y = resblock_up(y, dim * 1, scope='resblock_up_3')
         y = self_attention_2(y, dim * 1, scope='self_attention')
-        y = resblock_up(y, 3, scope='resblock_up_4')
+        y = resblock_up(y, dim * 1, scope='resblock_up_3')
+        y = conv(relu(bn(y)),3,3,1)
         img = tf.tanh(y)
         return img
 
@@ -252,6 +251,8 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
+        y = relu(y)
+        y = global_sum_pooling(y)
         logit = fc(y, 1)
         return logit
 
