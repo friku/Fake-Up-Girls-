@@ -181,12 +181,12 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
         with tf.variable_scope('1x1conv1'):
             x = batch_n(x_init)
             x = relu(x)
-            # x = tf.image.resize_nearest_neighbor(x, (2*x.shape[1],2*x.shape[2]))
             x = conv(x, channels, 1, 1)
         with tf.variable_scope('res1'):
             x = batch_n(x)
             x = relu(x)
-            x = dconv(x, channels, 3, 2)
+            x = tf.image.resize_area(x, (2*x.shape[1],2*x.shape[2]))
+            x = conv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
             x = batch_n(x)
@@ -198,7 +198,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = conv(x, channels, 1, 1)
 
         with tf.variable_scope('skip') :
-            x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
+            x_init = tf.image.resize_area(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
             x_init = conv(x_init, channels, 1, 1)
 
     return x + x_init
@@ -217,12 +217,13 @@ def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resb
         with tf.variable_scope('res2') :
             x = ln(x)
             x = relu(x)
-            x = conv(x, channels, 3,2)
+            x = conv(x, channels, 3,1)
         with tf.variable_scope('1x1conv2'):
             x = ln(x)
             x = relu(x)
+            x = tf.layers.average_pooling2d(x,2,2)
             x = conv(x, channels, 1,1)
-            # x = tf.layers.average_pooling2d(x,2,2)
+            
 
         with tf.variable_scope('skip') :
             x_init = conv(x_init, channels, 1,1)
