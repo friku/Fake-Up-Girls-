@@ -158,6 +158,23 @@ def batch_n(x, is_training=True, scope='batch_norm'):
                                          epsilon=1e-05,
                                          training=is_training,
                                          name=scope)
+def resblock(x_init, channels, use_bias=True, is_training=True, scope='resblock'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = ln(x_init)
+            x = relu(x)
+            x = conv(x, channels, 3, 1)
+
+        with tf.variable_scope('res2') :
+            x = ln(x)
+            x = relu(x)
+            x = conv(x, channels, 3, 1)
+
+        with tf.variable_scope('skip') :
+            x_init = conv(x_init, channels, 1, 1)
+
+    return x + x_init
+
 
 def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
     with tf.variable_scope(scope):
@@ -249,8 +266,8 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
+        y = resblock(y, dim * 8, scope='resblock_down_4')
         y = relu(y)
-        y = global_sum_pooling(y)
         logit = fc(y, 1)
         return logit
 
