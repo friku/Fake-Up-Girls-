@@ -159,23 +159,6 @@ def batch_n(x, is_training=True, scope='batch_norm'):
                                          training=is_training,
                                          name=scope)
 
-def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
-    with tf.variable_scope(scope):
-        with tf.variable_scope('res1'):
-            x = batch_n(x_init)
-            x = lrelu(x)
-            x = conv(x, channels, 3,2)
-
-        with tf.variable_scope('res2') :
-            x = batch_n(x)
-            x = lrelu(x)
-            x = conv(x, channels, 3,1)
-
-        with tf.variable_scope('skip') :
-            x_init = conv(x_init, channels, 3,2)
-
-    return x + x_init
-
 def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
@@ -190,6 +173,23 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 
         with tf.variable_scope('skip') :
             x_init = dconv(x_init, channels, 3, 2)
+
+    return x + x_init
+
+def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = batch_n(x_init)
+            x = lrelu(x)
+            x = conv(x, channels, 3,2)
+
+        with tf.variable_scope('res2') :
+            x = batch_n(x)
+            x = lrelu(x)
+            x = conv(x, channels, 3,1)
+
+        with tf.variable_scope('skip') :
+            x_init = conv(x_init, channels, 3,2)
 
     return x + x_init
 
@@ -219,6 +219,9 @@ def self_attention_2(x, channels, scope='self_attention'):
         x = gamma * o + x
     return x
 
+def global_sum_pooling(x) :
+    gsp = tf.reduce_sum(x, axis=[1, 2])
+    return gsp
 #GAN_model
 
 def generator_big(z, dim=64, reuse=True, training=True):
@@ -246,7 +249,7 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         return logit
 
 
-def generator_self(z, dim=96, reuse=True, training=True):
+def generator_self(z, dim=64, reuse=True, training=True):
     bn = partial(batch_norm, is_training=training)
     dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
     fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
@@ -254,20 +257,21 @@ def generator_self(z, dim=96, reuse=True, training=True):
     with tf.variable_scope('generator', reuse=reuse):
         y = fc_bn_relu(z, 4 * 4 * dim * 8)
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
-        y = dconv_bn_relu(y, dim * 4, 5, 2)
-        y = dconv_bn_relu(y, dim * 2, 5, 2)
-        y = dconv_bn_relu(y, dim * 1, 5, 2)
+        y = dconv_bn_relu(y, dim * 4, 3, 2)
+        y = dconv_bn_relu(y, dim * 2, 3, 2)
+        y = dconv_bn_relu(y, dim * 1, 3, 2)
         y = self_attention_2(y, dim * 1, scope='self_attention')
         img = tf.tanh(dconv(y, 3, 5, 2))
         return img
 
-def discriminator_wgan_gp_self(img, dim=96, reuse=True, training=True):
+
+def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
         y = lrelu(conv(img, dim, 5, 2))
         y = self_attention_2(y, dim * 1, scope='self_attention')
-        y = conv_ln_lrelu(y, dim * 2, 5, 2)
-        y = conv_ln_lrelu(y, dim * 4, 5, 2)
-        y = conv_ln_lrelu(y, dim * 8, 5, 2)
+        y = conv_ln_lrelu(y, dim * 2, 3, 2)
+        y = conv_ln_lrelu(y, dim * 4, 3, 2)
+        y = conv_ln_lrelu(y, dim * 8, 3, 2)
         logit = fc(y, 1)
         return logit
