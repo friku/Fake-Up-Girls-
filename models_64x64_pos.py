@@ -185,7 +185,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
         with tf.variable_scope('res1'):
             x = batch_n(x)
             x = relu(x)
-            x = tf.image.resize_bilinear(x, (2*x.shape[1],2*x.shape[2]))
+            x = tf.image.resize_nearest_neighbor(x, (2*x.shape[1],2*x.shape[2]))
             x = conv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
@@ -198,7 +198,7 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = conv(x, channels, 1, 1)
 
         with tf.variable_scope('skip') :
-            x_init = tf.image.resize_bilinear(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
+            x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
             x_init = conv(x_init, channels, 1, 1)
 
     return x + x_init
@@ -271,12 +271,12 @@ def generator_big(z, dim=64, reuse=True, training=True):
         fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
         y = fc_bn_relu(z, 4 * 4 * dim * 8)
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
-        y = resblock_up(y, dim * 8, scope='resblock_up_0')
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
-        y = self_attention_2(y, dim * 2, scope='self_attention')
+        y = self_attention_2(y, dim * 2, scope='self_attention1')
         y = resblock_up(y, dim * 1, scope='resblock_up_3')
-        y = conv(relu(bn(y)),3,3,1)
+        y = self_attention_2(y, dim * 1, scope='self_attention2')
+        y = resblock_up(y, 3, scope='resblock_up_3')
         img = tf.tanh(y)
         return img
 
@@ -287,7 +287,6 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
-        y = resblock(y, dim * 8, scope='resblock1')
         y = relu(y)
         logit = fc(y, 1)
         return logit
