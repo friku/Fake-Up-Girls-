@@ -98,7 +98,7 @@ it_cnt, update_cnt = utils.counter()
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
 
-dir_name = "tik_"+str(imgsize)+"_self1_batch64_lrd2^-4_lrg2^-4"
+dir_name = "tik_"+str(imgsize)+"_self0_batch64_lrd2^-4_lrg2^-4"
 
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
