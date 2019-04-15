@@ -290,7 +290,7 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         return logit
 
 
-def generator_self(z, dim=64, reuse=True, training=True):
+def generator_self(z, dim=96, reuse=True, training=True):
     bn = partial(batch_norm, is_training=training)
     dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
     fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
@@ -308,7 +308,7 @@ def generator_self(z, dim=64, reuse=True, training=True):
         return img
 
 
-def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
+def discriminator_wgan_gp_self(img, dim=96, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
         # y = self_attention_2(y, dim * 1, scope='self_attention1')
