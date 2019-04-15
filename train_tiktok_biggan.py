@@ -10,7 +10,7 @@ import tensorflow as tf
 import models_64x64_pos as models
 
 """ param """
-epoch = 5000
+epoch = 50000
 batch_i = 1
 batch_size = 64*batch_i
 lr_d = 0.0002
@@ -98,7 +98,7 @@ it_cnt, update_cnt = utils.counter()
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
 
-dir_name = "tik_"+str(imgsize)+"_self0_batch64_lrd2^-4_lrg2^-4"
+dir_name = "tik_"+str(imgsize)+"_self0_batch64_lrd2^-4_lrg2^-4_ch96"
 
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
