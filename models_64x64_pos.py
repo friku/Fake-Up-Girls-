@@ -311,13 +311,12 @@ def generator_self(z, dim=64, reuse=True, training=True):
 def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
-        img = self_attention_2(img, 24, scope='self_attention1')
-        y = lrelu(conv(img, dim, 5, 2))
         # y = self_attention_2(y, dim * 1, scope='self_attention1')
+        y = lrelu(conv(img, dim, 3, 1))
+        y = self_attention_2(y, dim * 1, scope='self_attention1')
+        y = conv_ln_lrelu(y, dim * 1, 3, 2)
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
-        # y = self_attention_2(y, dim * 2, scope='self_attention2')
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
-        # y = self_attention_2(y, dim * 4, scope='self_attention3')
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
         logit = fc(y, 1)
         return logit
