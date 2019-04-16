@@ -178,24 +178,15 @@ def resblock(x_init, channels, use_bias=True, is_training=True, scope='resblock'
 
 def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
     with tf.variable_scope(scope):
-        with tf.variable_scope('1x1conv1'):
+        with tf.variable_scope('res1'):
             x = batch_n(x_init)
             x = relu(x)
-            x = conv(x, channels, 1, 1)
-        with tf.variable_scope('res1'):
-            x = batch_n(x)
-            x = relu(x)
-            x = tf.image.resize_nearest_neighbor(x, (2*x.shape[1],2*x.shape[2]))
-            x = conv(x, channels, 3, 1)
+            x = dconv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
             x = batch_n(x)
             x = relu(x)
-            x = conv(x, channels, 3, 1)
-        with tf.variable_scope('1x1conv2'):
-            x = batch_n(x)
-            x = relu(x)
-            x = conv(x, channels, 1, 1)
+            x = dconv(x, channels, 3, 2)
 
         with tf.variable_scope('skip') :
             x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
@@ -205,29 +196,16 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
 
 def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
     with tf.variable_scope(scope):
-        with tf.variable_scope('1x1conv1'):
-            x = ln(x_init)
-            x = relu(x)
-            x = conv(x, channels, 1,1)
         with tf.variable_scope('res1') :
-            x = ln(x)
-            x = relu(x)
+            x = relu(x_init)
             x = conv(x, channels, 3,1)
 
         with tf.variable_scope('res2') :
-            x = ln(x)
             x = relu(x)
-            x = conv(x, channels, 3,1)
-        with tf.variable_scope('1x1conv2'):
-            x = ln(x)
-            x = relu(x)
-            x = tf.layers.average_pooling2d(x,2,2)
-            x = conv(x, channels, 1,1)
-            
+            x = conv(x, channels, 3,2)
 
         with tf.variable_scope('skip') :
-            x_init = conv(x_init, channels, 1,1)
-            x_init = tf.layers.average_pooling2d(x_init,2,2)
+            x_init = conv(x_init, channels, 3,2)
 
     return x + x_init
 
@@ -273,7 +251,6 @@ def generator_big(z, dim=64, reuse=True, training=True):
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
-        y = self_attention_2(y, dim * 2, scope='self_attention1')
         y = resblock_up(y, dim * 1, scope='resblock_up_3')
         y = self_attention_2(y, dim * 1, scope='self_attention2')
         y = resblock_up(y, 3, scope='resblock_up_4')
