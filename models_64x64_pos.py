@@ -247,7 +247,7 @@ def generator_big(z, dim=64, reuse=True, training=True):
     with tf.variable_scope('generator', reuse=reuse):
         bn = partial(batch_norm, is_training=training)
         fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-        y = fc_bn_relu(z, 4 * 4 * dim * 8)
+        y = fc(z, 4 * 4 * dim * 8)
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
@@ -278,9 +278,7 @@ def generator_self(z, dim=64, reuse=True, training=True):
         y = fc_bn_relu(z, 4 * 4 * dim * 8)
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
         y = dconv_bn_relu(y, dim * 4, 3, 2)
-        # y = self_attention_2(y, dim * 4, scope='self_attention3')
         y = dconv_bn_relu(y, dim * 2, 3, 2)
-        # y = self_attention_2(y, dim * 2, scope='self_attention2')
         y = dconv_bn_relu(y, dim * 1, 3, 2)
         y = self_attention_2(y, dim * 1, scope='self_attention1')
         img = tf.tanh(dconv(y, 3, 5, 2))
@@ -299,3 +297,39 @@ def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
         logit = fc(y, 1)
         return logit
+
+
+def generator_self_deep(z, dim=64, reuse=True, training=True):
+    bn = partial(batch_norm, is_training=training)
+    dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+    fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
+
+    with tf.variable_scope('generator', reuse=reuse):
+        y = fc_bn_relu(z, 1 * 1 * dim * 8)
+        y = tf.reshape(y, [-1, 1, 1, dim * 8])
+        y = dconv_bn_relu(y, dim * 8, 3, 2)
+        y = dconv_bn_relu(y, dim * 8, 3, 2)
+        y = dconv_bn_relu(y, dim * 4, 3, 2)
+        y = dconv_bn_relu(y, dim * 2, 3, 2)
+        y = dconv_bn_relu(y, dim * 1, 3, 2)
+        y = self_attention_2(y, dim * 1, scope='self_attention1')
+        img = tf.tanh(dconv(y, 3, 5, 2))
+        return img
+
+
+def discriminator_wgan_gp_self_deep(img, dim=64, reuse=True, training=True):
+    with tf.variable_scope('discriminator', reuse=reuse):
+        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
+        y = lrelu(conv(img, dim, 3, 1))
+        y = self_attention_2(y, dim * 1, scope='self_attention1')
+        y = conv_ln_lrelu(y, dim * 1, 3, 2)
+        y = conv_ln_lrelu(y, dim * 2, 3, 2)
+        y = conv_ln_lrelu(y, dim * 4, 3, 2)
+        y = conv_ln_lrelu(y, dim * 8, 3, 2)
+        y = conv_ln_lrelu(y, dim * 8, 3, 2)
+        y = conv_ln_lrelu(y, dim * 8, 3, 2)
+        logit = fc(y, 1)
+        return logit
+
+
+
