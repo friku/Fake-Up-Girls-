@@ -48,7 +48,7 @@ tik = np.load("./tiktok_align_crop_all_resize64.npy")
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
     generator = models.generator_big
-    discriminator = models.generator_big
+    discriminator = models.discriminator_wgan_gp_big
     ''' graph '''
     # inputs
     real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
