@@ -13,8 +13,8 @@ import models_64x64_pos as models
 epoch = 50000
 batch_i = 1
 batch_size = 64*batch_i
-lr_d = 0.00002
-lr_g = 0.00002
+lr_d = 0.0002
+lr_g = 0.0002
 z_dim = 100
 n_critic = 2
 gpu_id = 3
