@@ -353,9 +353,8 @@ def discriminator_wgan_gp_self128(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
         # y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = lrelu(conv(img, dim, 3, 1))
+        y = lrelu(conv(img, dim, 3, 2))
         y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = conv_ln_lrelu(y, dim * 1, 3, 2)
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
