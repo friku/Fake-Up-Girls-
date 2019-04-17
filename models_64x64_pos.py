@@ -187,8 +187,8 @@ def resblock_up(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = dconv(x, channels, 3, 2)
 
         with tf.variable_scope('skip') :
-            x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
-            x_init = conv(x_init, channels, 1, 1)
+            # x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
+            x_init = dconv(x_init, channels, 3, 2)
 
     return x + x_init
 
