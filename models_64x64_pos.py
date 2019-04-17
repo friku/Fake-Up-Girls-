@@ -161,12 +161,10 @@ def batch_n(x, is_training=True, scope='batch_norm'):
 def resblock(x_init, channels, use_bias=True, is_training=True, scope='resblock'):
     with tf.variable_scope(scope):
         with tf.variable_scope('res1'):
-            x = ln(x_init)
-            x = relu(x)
+            x = relu(x_init)
             x = conv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
-            x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3, 1)
 
@@ -254,12 +252,14 @@ def generator_big(z, dim=64, reuse=True, training=True):
         y = resblock_up(y, dim * 1, scope='resblock_up_3')
         y = self_attention_2(y, dim * 1, scope='self_attention2')
         y = resblock_up(y, 3, scope='resblock_up_4')
+        y = resblock(y, 3, scope='resblock_1')
         img = tf.tanh(y)
         return img
 
 def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator', reuse=reuse):     
-        y = resblock_down(img, dim * 1, scope='resblock_down_1')
+    with tf.variable_scope('discriminator', reuse=reuse):   
+        y = resblock(img, 3, scope='resblock_1')  
+        y = resblock_down(y, dim * 1, scope='resblock_down_1')
         y = self_attention_2(y, dim * 1, scope='self_attention')
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
