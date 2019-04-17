@@ -245,7 +245,7 @@ def generator_big(z, dim=64, reuse=True, training=True):
     with tf.variable_scope('generator', reuse=reuse):
         bn = partial(batch_norm, is_training=training)
         # fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-        y = fc(z, 4 * 4 * dim * 8)
+        y = fc(z, 4 * 4 * dim * 8,scope='fc1')
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
         y = resblock_up(y, dim * 4, scope='resblock_up_1')
         y = resblock_up(y, dim * 2, scope='resblock_up_2')
