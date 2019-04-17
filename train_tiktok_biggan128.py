@@ -43,7 +43,7 @@ def preprocess_tik(img):
 img_paths = glob.glob('../Generative_Art_with_GAN/datasets/img_align_celeba/*.jpg')
 #data_pool = utils.DiskImageData(img_paths, batch_size, shape=[218, 178, 3], preprocess_fn=preprocess_fn)
 
-tik = np.load("./tiktok_align_crop_all_resize64.npy")
+tik = np.load("./tiktok_align_crop_all_resize128.npy")
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
