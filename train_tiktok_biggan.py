@@ -47,8 +47,8 @@ tik = np.load("./tiktok_align_crop_all_resize64.npy")
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
-    generator = models.generator_self_deep
-    discriminator = models.discriminator_wgan_gp_self_deep
+    generator = models.generator_big
+    discriminator = models.generator_big
     ''' graph '''
     # inputs
     real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
@@ -98,7 +98,7 @@ it_cnt, update_cnt = utils.counter()
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
 
-dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg2^-4_ch64_6res_noup"
+dir_name = "tik_"+str(imgsize)+"_big_batch64_lrd2^-4_lrg2^-4_ch64_6res_noup1"
 
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
