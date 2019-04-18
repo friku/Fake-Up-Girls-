@@ -77,7 +77,8 @@ def resblock_down(x_init, channels, use_bias=True, is_training=True, scope='resb
 
         with tf.variable_scope('res2') :
             x = relu(x)
-            x = conv(x, channels, 3,2)
+            x = conv(x, channels, 3,1)
+            x = tf.layers.average_pooling2d(x,2,2)
 
         with tf.variable_scope('skip') :
             x_init = conv(x_init, channels, 1,1)
@@ -123,6 +124,7 @@ def global_sum_pooling(x) :
 def generator_big(z, dim=64, reuse=True, training=True):
     with tf.variable_scope('generator', reuse=reuse):
         bn = partial(batch_norm, is_training=training)
+
         y = fc(z, 4 * 4 * dim * 8,scope='fc_gen_1')
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
         y = resblock_up(y, dim * 8, scope='resblock_up_1')
@@ -141,6 +143,72 @@ def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
         y = resblock_down(y, dim * 2, scope='resblock_down_2')
         y = resblock_down(y, dim * 4, scope='resblock_down_3')
         y = resblock_down(y, dim * 8, scope='resblock_down_4')
+        y = relu(y)
+        logit = fc(y, 1,scope='fc_dis_1')
+        return logit
+
+##################################################################################
+# sepGAN
+##################################################################################
+
+
+def resblock_up_sep(x_init, channels, use_bias=True, is_training=True, scope='resblock_up'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1'):
+            x = batch_n(x_init)
+            x = relu(x)
+            x = tf.image.resize_nearest_neighbor(x,(2*x_init.shape[1],2*x_init.shape[2]))
+            x = tf.layers.separable_conv2d(x, channels, 3, 1,padding='same')
+
+        with tf.variable_scope('res2') :
+            x = batch_n(x)
+            x = relu(x)
+            x = tf.layers.separable_conv2d(x, channels, 3, 1,padding='same')
+
+        with tf.variable_scope('skip') :
+            x_init = tf.image.resize_nearest_neighbor(x_init,(2*x_init.shape[1],2*x_init.shape[2]))
+            x_init = conv(x_init, channels, 1, 1)
+
+    return x + x_init
+
+def resblock_down_sep(x_init, channels, use_bias=True, is_training=True, scope='resblock_down'):
+    with tf.variable_scope(scope):
+        with tf.variable_scope('res1') :
+            x = relu(x_init)
+            x = tf.layers.separable_conv2d(x, channels, 3,1,padding='same')
+
+        with tf.variable_scope('res2') :
+            x = relu(x)
+            x = tf.layers.separable_conv2d(x, channels, 3,2,padding='same')
+
+        with tf.variable_scope('skip') :
+            x_init = conv(x_init, channels, 1,1)
+            x_init = tf.layers.average_pooling2d(x_init,2,2)
+
+    return x + x_init
+
+
+def generator_big_sep(z, dim=64, reuse=True, training=True):
+    with tf.variable_scope('generator', reuse=reuse):
+        bn = partial(batch_norm, is_training=training)
+        y = fc(z, 4 * 4 * dim * 8,scope='fc_gen_1')
+        y = tf.reshape(y, [-1, 4, 4, dim * 8])
+        y = resblock_up_sep(y, dim * 8, scope='resblock_up_1')
+        y = resblock_up_sep(y, dim * 4, scope='resblock_up_2')
+        y = resblock_up_sep(y, dim * 2, scope='resblock_up_3')
+        y = self_attention_2(y, dim * 2, scope='self_attention2')
+        y = resblock_up_sep(y, dim * 1, scope='resblock_up_4')
+        y = conv(relu(bn(y)),3,3,1)
+        img = tf.tanh(y)
+        return img
+
+def discriminator_wgan_gp_big_sep(img, dim=64, reuse=True, training=True):
+    with tf.variable_scope('discriminator', reuse=reuse): 
+        y = resblock_down_sep(img, dim * 1, scope='resblock_down_1')
+        y = self_attention_2(y, dim * 1, scope='self_attention')
+        y = resblock_down_sep(y, dim * 2, scope='resblock_down_2')
+        y = resblock_down_sep(y, dim * 4, scope='resblock_down_3')
+        y = resblock_down_sep(y, dim * 8, scope='resblock_down_4')
         y = relu(y)
         logit = fc(y, 1,scope='fc_dis_1')
         return logit
