@@ -59,7 +59,7 @@ def resblock_ln(x_init, channels, use_bias=True, is_training=True, scope='resblo
             x = conv(x, channels, 3, 1)
 
         with tf.variable_scope('res2') :
-            x = n(x)
+            x = ln(x)
             x = relu(x)
             x = conv(x, channels, 3, 1)
 
@@ -175,14 +175,14 @@ def generator_big_bn(z, dim=64, reuse=True, training=True):
 
         y = fc(z, 4 * 4 * dim * 8,scope='fc_gen_1')
         y = tf.reshape(y, [-1, 4, 4, dim * 8])
-        y = resblock_up(y, dim * 8, scope='resblock_up_1')
+        y = resblock_bn(y, dim * 8, scope='resblock_bn_1')
         y = tf.image.resize_nearest_neighbor(y,(2*y.shape[1],2*y.shape[2]))
-        y = resblock_up(y, dim * 4, scope='resblock_up_2')
+        y = resblock_bn(y, dim * 4, scope='resblock_bn_2')
         y = tf.image.resize_nearest_neighbor(y,(2*y.shape[1],2*y.shape[2]))
-        y = resblock_up(y, dim * 2, scope='resblock_up_3')
+        y = resblock_bn(y, dim * 2, scope='resblock_bn_3')
         y = self_attention_2(y, dim * 2, scope='self_attention2')
         y = tf.image.resize_nearest_neighbor(y,(2*y.shape[1],2*y.shape[2]))
-        y = resblock_up(y, dim * 1, scope='resblock_up_4')
+        y = resblock_bn(y, dim * 1, scope='resblock_bn_4')
         y = tf.image.resize_nearest_neighbor(y,(2*y.shape[1],2*y.shape[2]))
         y = conv(relu(bn(y)),3,3,1)
         img = tf.tanh(y)
@@ -192,15 +192,15 @@ def discriminator_wgan_gp_big_ln(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse): 
         y = conv(img,dim * 1,3,1)
         y = tf.layers.average_pooling2d(y,2,2)
-        y = resblock_down(y, dim * 1, scope='resblock_down_1')
+        y = resblock_ln(y, dim * 1, scope='resblock_down_1')
         y = tf.layers.average_pooling2d(y,2,2)
         y = self_attention_2(y, dim * 1, scope='self_attention')
-        y = resblock_down(y, dim * 2, scope='resblock_down_2')
+        y = resblock_ln(y, dim * 2, scope='resblock_down_2')
         y = tf.layers.average_pooling2d(y,2,2)
-        y = resblock_down(y, dim * 4, scope='resblock_down_3')
+        y = resblock_ln(y, dim * 4, scope='resblock_down_3')
         y = tf.layers.average_pooling2d(y,2,2)
-        y = resblock_down(y, dim * 8, scope='resblock_down_4')
-        y = relu(y)
+        y = resblock_ln(y, dim * 8, scope='resblock_down_4')
+        y = relu(ln(y))
         logit = fc(y, 1,scope='fc_dis_1')
         return logit
 
