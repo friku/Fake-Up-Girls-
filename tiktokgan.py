@@ -8,6 +8,7 @@ import traceback
 import numpy as np
 import tensorflow as tf
 import models_64x64_pos as models
+import horovod.tensorflow as hvd
 
 """ param """
 epoch = 50000
@@ -28,6 +29,9 @@ def preprocess_tik(img):
     return batch
 
 tik = np.load("./tiktok_align_crop_all_resize128.npy")
+hvd.init()
+config = tf.ConfigProto()
+config.gpu_options.visible_device_list = str(hvd.local_rank())
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
@@ -61,11 +65,17 @@ with tf.device('/gpu:%d' % gpu_id):
     gp = gradient_penalty(real, fake, discriminator)
     d_loss = -wd + gp * 10.0
     g_loss = -tf.reduce_mean(f_logit)
+
+    d_opt = tf.train.AdamOptimizer(learning_rate=lr_d * hvd.size(), beta1=0.5)
+    d_opt = hvd.DistributedOptimizer(d_opt)
+    g_opt = tf.train.AdagradOptimizer(learning_rate=lr_g * hvd.size(), beta1=0.5)
+    g_opt = hvd.DistributedOptimizer(g_opt)
+    hooks = [hvd.BroadcastGlobalVariablesHook(0)]
     # otpims
     d_var = utils.trainable_variables('discriminator')
     g_var = utils.trainable_variables('generator')
-    d_step = tf.train.AdamOptimizer(learning_rate=lr_d, beta1=0.5).minimize(d_loss, var_list=d_var)
-    g_step = tf.train.AdamOptimizer(learning_rate=lr_g, beta1=0.5).minimize(g_loss, var_list=g_var)
+    d_step = d_opt.minimize(d_loss, var_list=d_var)
+    g_step = g_opt.minimize(g_loss, var_list=g_var)
     # summaries
     d_summary = utils.summary({wd: 'wd', gp: 'gp'})
     g_summary = utils.summary({g_loss: 'g_loss'})

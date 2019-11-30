@@ -281,3 +281,4 @@ def discriminator_wgan_gp_self32(img, dim=64, reuse=True, training=True):
         print(y)
         logit = fc(y, 1)
         return logit
+
