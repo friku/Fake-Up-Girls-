@@ -68,7 +68,7 @@ with tf.device('/gpu:%d' % gpu_id):
 
     d_opt = tf.train.AdamOptimizer(learning_rate=lr_d * hvd.size(), beta1=0.5)
     d_opt = hvd.DistributedOptimizer(d_opt)
-    g_opt = tf.train.AdagradOptimizer(learning_rate=lr_g * hvd.size(), beta1=0.5)
+    g_opt = tf.train.AdamOptimizer(learning_rate=lr_g * hvd.size(), beta1=0.5)
     g_opt = hvd.DistributedOptimizer(g_opt)
     hooks = [hvd.BroadcastGlobalVariablesHook(0)]
     # otpims
