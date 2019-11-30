@@ -13,7 +13,7 @@ import horovod.tensorflow as hvd
 """ param """
 epoch = 50000
 batch_i = 1
-batch_size = 64*batch_i
+batch_size = 32*batch_i
 lr_d = 0.0002
 lr_g = 0.0002
 z_dim = 100
