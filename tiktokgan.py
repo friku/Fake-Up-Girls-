@@ -33,7 +33,8 @@ hvd.init()
 config = tf.ConfigProto()
 config.gpu_options.visible_device_list = str(hvd.local_rank())
 """ graphs """
-with tf.device('/gpu:%d' % gpu_id):
+# with tf.device(/gpu:%d' % gpu_id'):
+with tf.device():   
     ''' models '''
     generator = models.generator_self128
     discriminator = models.discriminator_wgan_gp_self128
