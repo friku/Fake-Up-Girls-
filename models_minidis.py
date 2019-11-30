@@ -241,34 +241,6 @@ def global_sum_pooling(x) :
 
 #GAN_model
 
-def generator_big(z, dim=64, reuse=True, training=True):
-    with tf.variable_scope('generator', reuse=reuse):
-        bn = partial(batch_norm, is_training=training)
-        # fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-        y = fc(z, 4 * 4 * dim * 8,scope='fc_gen_1')
-        y = tf.reshape(y, [-1, 4, 4, dim * 8])
-        y = resblock_up(y, dim * 4, scope='resblock_up_1')
-        y = resblock_up(y, dim * 2, scope='resblock_up_2')
-        y = resblock_up(y, dim * 1, scope='resblock_up_3')
-        y = self_attention_2(y, dim * 1, scope='self_attention2')
-        y = resblock_up(y, 3, scope='resblock_up_4')
-        y = resblock(y, 3, scope='resblock_1')
-        img = tf.tanh(y)
-        return img
-
-def discriminator_wgan_gp_big(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator', reuse=reuse):   
-        y = resblock(img, 3, scope='resblock_1')  
-        y = resblock_down(y, dim * 1, scope='resblock_down_1')
-        y = self_attention_2(y, dim * 1, scope='self_attention')
-        y = resblock_down(y, dim * 2, scope='resblock_down_2')
-        y = resblock_down(y, dim * 4, scope='resblock_down_3')
-        y = resblock_down(y, dim * 8, scope='resblock_down_4')
-        y = relu(y)
-        logit = fc(y, 1,scope='fc_dis_1')
-        return logit
-
-
 def generator_self(z, dim=64, reuse=True, training=True):
     bn = partial(batch_norm, is_training=training)
     dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
@@ -289,147 +261,23 @@ def discriminator_wgan_gp_self(img, dim=64, reuse=True, training=True):
     with tf.variable_scope('discriminator', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
         # y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = lrelu(conv(img, dim, 3, 1))
+        y = conv_ln_lrelu(img, dim * 1, 3, 2)
         y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = conv_ln_lrelu(y, dim * 1, 3, 2)
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
         y = conv_ln_lrelu(y, dim * 8, 3, 2)
+        print(y)
         logit = fc(y, 1)
         return logit
 
-
-def generator_self_deep(z, dim=64, reuse=True, training=True):
-    bn = partial(batch_norm, is_training=training)
-    dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-    fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-
-    with tf.variable_scope('generator', reuse=reuse):
-        y = fc_bn_relu(z, 1 * 1 * dim * 8)
-        y = tf.reshape(y, [-1, 1, 1, dim * 8])
-        y = dconv_bn_relu(y, dim * 8, 3, 2)
-        y = dconv_bn_relu(y, dim * 8, 3, 2)
-        y = dconv_bn_relu(y, dim * 4, 3, 2)
-        y = dconv_bn_relu(y, dim * 2, 3, 2)
-        y = dconv_bn_relu(y, dim * 1, 3, 2)
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        img = tf.tanh(dconv(y, 3, 5, 2))
-        return img
-
-
-def discriminator_wgan_gp_self_deep(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator', reuse=reuse):
-        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
-        y = lrelu(conv(img, dim, 3, 1))
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = conv_ln_lrelu(y, dim * 1, 3, 2)
-        y = conv_ln_lrelu(y, dim * 2, 3, 2)
-        y = conv_ln_lrelu(y, dim * 4, 3, 2)
-        y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        logit = fc(y, 1)
-        return logit
-
-    
-def generator_self128(z, dim=64, reuse=True, training=True):
-    bn = partial(batch_norm, is_training=training)
-    dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-    fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-
-    with tf.variable_scope('generator', reuse=reuse):
-        y = fc_bn_relu(z, 4 * 4 * dim * 16)
-        y = tf.reshape(y, [-1, 4, 4, dim * 16])
-        y = dconv_bn_relu(y, dim * 8, 3, 2)
-        y = dconv_bn_relu(y, dim * 4, 3, 2)
-        y = dconv_bn_relu(y, dim * 2, 3, 2)
-        y = dconv_bn_relu(y, dim * 1, 3, 2)
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        img = tf.tanh(dconv(y, 3, 5, 2))
-        return img
-
-
-def discriminator_wgan_gp_self128(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator', reuse=reuse):
+def discriminator_wgan_gp_self32(img, dim=64, reuse=True, training=True):
+    with tf.variable_scope('discriminator32', reuse=reuse):
         conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
         # y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = lrelu(conv(img, dim, 3, 2))
+        y = conv_ln_lrelu(img, dim * 1, 3, 2)
         y = self_attention_2(y, dim * 1, scope='self_attention1')
         y = conv_ln_lrelu(y, dim * 2, 3, 2)
         y = conv_ln_lrelu(y, dim * 4, 3, 2)
-        y = conv_ln_lrelu(y, dim * 8, 3, 2)
-        y = conv_ln_lrelu(y, dim * 16, 3, 2)
-        logit = fc(y, 1)
-        return logit
-
-
-def discriminator_wgan_gp_self64(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator64', reuse=reuse):
-        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
-        # y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = lrelu(conv(img[0], dim, 3, 2))
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y1 = lrelu(conv(img[1], dim, 3, 1))
-        y = tf.concat([y,y1],3)
-        y = conv_ln_lrelu(y, dim * 1, 3, 2)
-        y1 = lrelu(conv(img[2], dim, 3, 1))
-        y = tf.concat([y,y1],3)
-        y = conv_ln_lrelu(y, dim * 2, 3, 2)
-        y = conv_ln_lrelu(y, dim * 4, 3, 2)
-        logit = fc(y, 1)
-        return logit
-
-
-def generator_self_pylamid(z, dim=64, reuse=True, training=True):
-    bn = partial(batch_norm, is_training=training)
-    dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-    fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-
-    with tf.variable_scope('generator', reuse=reuse):
-        y = fc_bn_relu(z, 4 * 4 * dim * 8)
-        y = tf.reshape(y, [-1, 4, 4, dim * 8])
-        y = dconv_bn_relu(y, dim * 4, 3, 2)
-        y = dconv_bn_relu(y, dim * 2, 3, 2)
-        img16 = dconv(y, 3, 1, 1)
-        y = dconv_bn_relu(y, dim * 1, 3, 2)
-        img32 = dconv(y, 3, 1, 1)
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        img64 = tf.tanh(dconv(y, 3, 5, 2))
-        return [img64,img32,img16]
-
-def style_noise(noise_shape,name):
-    noise_attention = tf.get_variable(name=name,shape=noise_shape)
-    noise = tf.random.normal(noise_shape)
-    B = tf.multiply(noise,noise_attention)
-    return B
-
-
-def generator_self_style(z, dim=64, reuse=True, training=True):
-    bn = partial(batch_norm, is_training=training)
-    dconv_bn_relu = partial(dconv, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-    fc_bn_relu = partial(fc, normalizer_fn=bn, activation_fn=relu, biases_initializer=None)
-
-    with tf.variable_scope('generator', reuse=reuse):
-        y = tf.get_variable(name="const",shape=[4,4,dim])
-        y = y+style_noise([4,4,dim],"noise_attn1")
-        y = dconv_bn_relu(y, dim * 4, 3, 2)
-        y = y+style_noise([4,4,dim],"noise_attn2")
-        y = dconv_bn_relu(y, dim * 2, 3, 2)
-        y = dconv_bn_relu(y, dim * 1, 3, 2)
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        img = tf.tanh(dconv(y, 3, 5, 2))
-        return img
-
-
-def discriminator_wgan_gp_self_style(img, dim=64, reuse=True, training=True):
-    with tf.variable_scope('discriminator', reuse=reuse):
-        conv_ln_lrelu = partial(conv, normalizer_fn=ln, activation_fn=lrelu, biases_initializer=None)
-        # y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = lrelu(conv(img, dim, 3, 1))
-        y = self_attention_2(y, dim * 1, scope='self_attention1')
-        y = conv_ln_lrelu(y, dim * 1, 3, 2)
-        y = conv_ln_lrelu(y, dim * 2, 3, 2)
-        y = conv_ln_lrelu(y, dim * 4, 3, 2)
-        y = conv_ln_lrelu(y, dim * 8, 3, 2)
+        print(y)
         logit = fc(y, 1)
         return logit

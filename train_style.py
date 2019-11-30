@@ -18,7 +18,7 @@ lr_g = 0.0002
 z_dim = 100
 n_critic = 2
 gpu_id = 3
-imgsize = 64
+imgsize = 128
 
 ''' data '''
 # you should prepare your own data in ./data/img_align_celeba
@@ -33,31 +33,25 @@ def preprocess_fn(img):
 #    img = tf.random_crop(img,[crop_size,crop_size,3])
     
     img = tf.to_float(tf.image.resize_images(img, [re_size, re_size], method=tf.image.ResizeMethod.BICUBIC)) / 127.5 - 1
-    
     return img
 def preprocess_tik(img):
     sample_id = np.random.randint(0,img.shape[0],batch_size)
     batch = img[sample_id]
-    img64 = batch / 127.5 - 1
-    img32 = batch[:,::2,::2,:]
-    img16 = batch[:,::4,::4,:]
-    return img64,img32,img16
+    batch = batch / 127.5 - 1
+    return batch
 
 img_paths = glob.glob('../Generative_Art_with_GAN/datasets/img_align_celeba/*.jpg')
 #data_pool = utils.DiskImageData(img_paths, batch_size, shape=[218, 178, 3], preprocess_fn=preprocess_fn)
 
-tik = np.load("./tiktok_align_crop_all_resize"+str(imgsize)+".npy")
+tik = np.load("./tiktok_align_crop_all_resize128.npy")
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' models '''
-    generator = models.generator_self_pylamid
-    discriminator = models.discriminator_wgan_gp_self64
+    generator = models.generator_self128
+    discriminator = models.discriminator_wgan_gp_self128
     ''' graph '''
     # inputs
-    real64 = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
-    real32 = tf.placeholder(tf.float32, shape=[None, imgsize//2, imgsize//2, 3])
-    real16 = tf.placeholder(tf.float32, shape=[None, imgsize//4, imgsize//4, 3])
-    real = [real64,real32,real16]
+    real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
     z = tf.placeholder(tf.float32, shape=[None, z_dim])
     
     # generate
@@ -68,24 +62,15 @@ with tf.device('/gpu:%d' % gpu_id):
     # losses
     def gradient_penalty(real, fake, f):
         def interpolate(a, b):
-            shape = tf.concat((tf.shape(a[0])[0:1], tf.tile([1], [a[0].shape.ndims - 1])), axis=0)
+            shape = tf.concat((tf.shape(a)[0:1], tf.tile([1], [a.shape.ndims - 1])), axis=0)
             alpha = tf.random_uniform(shape=shape, minval=0., maxval=1.)
-            inter0 = a[0] + alpha * (b[0] - a[0])
-            inter0.set_shape(a[0].get_shape().as_list())
-            inter1 = a[1] + alpha * (b[1] - a[1])
-            inter1.set_shape(a[1].get_shape().as_list())
-            inter2 = a[2] + alpha * (b[2] - a[2])
-            inter2.set_shape(a[2].get_shape().as_list())
-            return [inter0,inter1,inter2]
+            inter = a + alpha * (b - a)
+            inter.set_shape(a.get_shape().as_list())
+            return inter
         x = interpolate(real, fake)
         pred = f(x)
-        gradients = tf.gradients(pred, x)
-        print(gradients)
-        sum_grad = tf.reduce_sum(tf.square(gradients[0]), reduction_indices=list(range(1, x[0].shape.ndims)))
-        sum_grad += tf.reduce_sum(tf.square(gradients[1]), reduction_indices=list(range(1, x[1].shape.ndims)))
-        sum_grad += tf.reduce_sum(tf.square(gradients[2]), reduction_indices=list(range(1, x[2].shape.ndims)))
-        
-        slopes = tf.sqrt(sum_grad)
+        gradients = tf.gradients(pred, x)[0]
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=list(range(1, x.shape.ndims))))
         gp = tf.reduce_mean((slopes - 1.)**2)
         return gp
     wd = tf.reduce_mean(r_logit) - tf.reduce_mean(f_logit)
@@ -113,7 +98,7 @@ it_cnt, update_cnt = utils.counter()
 saver = tf.train.Saver(max_to_keep=5)
 # summary writer
 
-dir_name = "tik_"+str(imgsize)+"_pylamid"
+dir_name = "tik_"+str(imgsize)+"_big128_batch64_lrd2^-4_lrg2^-4_ch64"
 
 summary_writer = tf.summary.FileWriter('./summaries/' + dir_name, sess.graph)
 
@@ -142,9 +127,9 @@ try:
         for i in range(n_critic):
             # batch data
             # real_ipt = data_pool.batch()
-            real_ipt64,real_ipt32,real_ipt16 = preprocess_tik(tik)
+            real_ipt = preprocess_tik(tik)
             z_ipt = np.random.normal(size=[batch_size, z_dim])
-            d_summary_opt, _ = sess.run([d_summary, d_step], feed_dict={real64: real_ipt64,real32: real_ipt32,real16: real_ipt16, z: z_ipt })
+            d_summary_opt, _ = sess.run([d_summary, d_step], feed_dict={real: real_ipt, z: z_ipt })
         summary_writer.add_summary(d_summary_opt, it)
 
         # train G
@@ -167,7 +152,7 @@ try:
 
             save_dir = './sample_images_while_training/' + dir_name
             utils.mkdir(save_dir + '/')
-            utils.imwrite(utils.immerge(f_sample_opt[0], 5, 5), '%s/Epoch_(%d)_(%dof%d).png' % (save_dir, epoch, it_epoch, batch_epoch))
+            utils.imwrite(utils.immerge(f_sample_opt, 5, 5), '%s/Epoch_(%d)_(%dof%d).png' % (save_dir, epoch, it_epoch, batch_epoch))
 
 except Exception:
     traceback.print_exc()
