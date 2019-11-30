@@ -34,54 +34,54 @@ config = tf.ConfigProto()
 config.gpu_options.visible_device_list = str(hvd.local_rank())
 """ graphs """
 # with tf.device(/gpu:%d' % gpu_id'):
-with tf.device():   
-    ''' models '''
-    generator = models.generator_self128
-    discriminator = models.discriminator_wgan_gp_self128
-    ''' graph '''
-    # inputs
-    real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
-    z = tf.placeholder(tf.float32, shape=[None, z_dim])
-    
-    # generate
-    fake = generator(z, reuse=False)
-    # dicriminate
-    r_logit = discriminator(real, reuse=False)
-    f_logit = discriminator(fake)
-    # losses
-    def gradient_penalty(real, fake, f):
-        def interpolate(a, b):
-            shape = tf.concat((tf.shape(a)[0:1], tf.tile([1], [a.shape.ndims - 1])), axis=0)
-            alpha = tf.random_uniform(shape=shape, minval=0., maxval=1.)
-            inter = a + alpha * (b - a)
-            inter.set_shape(a.get_shape().as_list())
-            return inter
-        x = interpolate(real, fake)
-        pred = f(x)
-        gradients = tf.gradients(pred, x)[0]
-        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=list(range(1, x.shape.ndims))))
-        gp = tf.reduce_mean((slopes - 1.)**2)
-        return gp
-    wd = tf.reduce_mean(r_logit) - tf.reduce_mean(f_logit)
-    gp = gradient_penalty(real, fake, discriminator)
-    d_loss = -wd + gp * 10.0
-    g_loss = -tf.reduce_mean(f_logit)
+  
+''' models '''
+generator = models.generator_self128
+discriminator = models.discriminator_wgan_gp_self128
+''' graph '''
+# inputs
+real = tf.placeholder(tf.float32, shape=[None, imgsize, imgsize, 3])
+z = tf.placeholder(tf.float32, shape=[None, z_dim])
 
-    d_opt = tf.train.AdamOptimizer(learning_rate=lr_d * hvd.size(), beta1=0.5)
-    d_opt = hvd.DistributedOptimizer(d_opt)
-    g_opt = tf.train.AdamOptimizer(learning_rate=lr_g * hvd.size(), beta1=0.5)
-    g_opt = hvd.DistributedOptimizer(g_opt)
-    hooks = [hvd.BroadcastGlobalVariablesHook(0)]
-    # otpims
-    d_var = utils.trainable_variables('discriminator')
-    g_var = utils.trainable_variables('generator')
-    d_step = d_opt.minimize(d_loss, var_list=d_var)
-    g_step = g_opt.minimize(g_loss, var_list=g_var)
-    # summaries
-    d_summary = utils.summary({wd: 'wd', gp: 'gp'})
-    g_summary = utils.summary({g_loss: 'g_loss'})
-    # sample
-    f_sample = generator(z, training=False)
+# generate
+fake = generator(z, reuse=False)
+# dicriminate
+r_logit = discriminator(real, reuse=False)
+f_logit = discriminator(fake)
+# losses
+def gradient_penalty(real, fake, f):
+    def interpolate(a, b):
+        shape = tf.concat((tf.shape(a)[0:1], tf.tile([1], [a.shape.ndims - 1])), axis=0)
+        alpha = tf.random_uniform(shape=shape, minval=0., maxval=1.)
+        inter = a + alpha * (b - a)
+        inter.set_shape(a.get_shape().as_list())
+        return inter
+    x = interpolate(real, fake)
+    pred = f(x)
+    gradients = tf.gradients(pred, x)[0]
+    slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=list(range(1, x.shape.ndims))))
+    gp = tf.reduce_mean((slopes - 1.)**2)
+    return gp
+wd = tf.reduce_mean(r_logit) - tf.reduce_mean(f_logit)
+gp = gradient_penalty(real, fake, discriminator)
+d_loss = -wd + gp * 10.0
+g_loss = -tf.reduce_mean(f_logit)
+
+d_opt = tf.train.AdamOptimizer(learning_rate=lr_d * hvd.size(), beta1=0.5)
+d_opt = hvd.DistributedOptimizer(d_opt)
+g_opt = tf.train.AdamOptimizer(learning_rate=lr_g * hvd.size(), beta1=0.5)
+g_opt = hvd.DistributedOptimizer(g_opt)
+hooks = [hvd.BroadcastGlobalVariablesHook(0)]
+# otpims
+d_var = utils.trainable_variables('discriminator')
+g_var = utils.trainable_variables('generator')
+d_step = d_opt.minimize(d_loss, var_list=d_var)
+g_step = g_opt.minimize(g_loss, var_list=g_var)
+# summaries
+d_summary = utils.summary({wd: 'wd', gp: 'gp'})
+g_summary = utils.summary({g_loss: 'g_loss'})
+# sample
+f_sample = generator(z, training=False)
 
 """ train """
 ''' init '''
