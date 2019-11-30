@@ -18,7 +18,7 @@ lr_d = 0.0002
 lr_g = 0.0002
 z_dim = 100
 n_critic = 2
-gpu_id = 3
+gpu_id = 1
 imgsize = 128
 
 ''' data '''
